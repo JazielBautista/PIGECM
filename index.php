@@ -1,19 +1,13 @@
 <?php
-require_once 'config/conexion.php';
+// index.php
+session_start();
+
+// Si el usuario ya inició sesión, mandarlo al dashboard del admin
+if (isset($_SESSION['usuario_id'])) {
+    header('Location: views/admin/dashboard.php');
+} else {
+    // Si no ha iniciado sesión, mandarlo al login
+    header('Location: views/auth/login.php');
+}
+exit;
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PIGECM - CentroGeo</title>
-</head>
-<body>
-    <h1>PIGECM - CentroGeo 🚀</h1>
-    <?php if (isset($pdo)): ?>
-        <p style="color: green; font-weight: bold;">
-            ¡Conexión a la base de datos MySQL establecida con éxito! 🎉
-        </p>
-    <?php endif; ?>
-</body>
-</html>

@@ -17,11 +17,11 @@ if (session_status() === PHP_SESSION_NONE) {
         <h2>PIGECM | CentroGeo</h2>
         <nav>
             <?php if (isset($_SESSION['usuario_id'])): ?>
-                <a href="/pigecm/views/dashboard.php">Panel Principal</a>
-                <a href="/pigecm/views/logout.php" style="color: #ff8a80;">Cerrar Sesión (<?= htmlspecialchars($_SESSION['usuario_nombre']) ?>)</a>
+                <a href="/pigecm/views/admin/dashboard.php">Panel Principal</a>
+                <a href="/pigecm/views/auth/logout.php" style="color: #ff8a80;">Cerrar Sesión (<?= htmlspecialchars($_SESSION['usuario_nombre']) ?>)</a>
             <?php else: ?>
-                <a href="/pigecm/views/login.php">Iniciar Sesión</a>
-                <a href="/pigecm/views/registro.php">Registrarse</a>
+                <a href="/pigecm/views/auth/login.php">Iniciar Sesión</a>
+                <a href="/pigecm/views/auth/registro.php">Registrarse</a>
             <?php endif; ?>
         </nav>
     </header>

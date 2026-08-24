@@ -1,8 +1,9 @@
 <?php
-// views/login.php
-require_once '../config/conexion.php';
-require_once '../includes/header.php';
+// views/auth/login.php
+session_start();
+require_once '../../config/conexion.php';
 
+$pdo = Conexion::conectar();
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -21,13 +22,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['usuario_nombre'] = $usuario['nombre'];
             $_SESSION['usuario_rol']    = $usuario['rol'];
 
-            header('Location: dashboard.php');
+            header('Location: ../admin/dashboard.php');
             exit;
         } else {
             $error = 'Credenciales incorrectas.';
         }
     }
 }
+
+require_once '../../includes/header.php';
 ?>
 
 <div class="container" style="max-width: 500px;">
@@ -55,4 +58,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once '../../includes/footer.php'; ?>
