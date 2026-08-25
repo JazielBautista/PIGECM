@@ -2,6 +2,7 @@
 // controllers/CuestionarioController.php
 session_start();
 require_once __DIR__ . '/../models/Cuestionario.php';
+require_once __DIR__ . '/../models/Pregunta.php';
 
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../views/auth/login.php');
@@ -57,6 +58,45 @@ if ($accion === 'toggle_estado') {
     if ($id) {
         Cuestionario::cambiarEstado($id, $nuevo_estado);
         header('Location: ../views/admin/cuestionarios.php?exito=Estado modificado');
+    }
+    exit;
+}
+
+// 3. Guardar nueva pregunta con sus opciones
+if ($accion === 'guardar_pregunta' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $cuestionario_id = (int)($_POST['cuestionario_id'] ?? 0);
+    $texto_pregunta  = trim($_POST['texto_pregunta'] ?? '');
+    $tipo_reactivo   = $_POST['tipo_reactivo'] ?? 'opcion_multiple';
+    $opciones        = $_POST['opciones'] ?? [];
+    $puntos          = $_POST['puntos'] ?? [];
+
+    if ($cuestionario_id > 0 && !empty($texto_pregunta)) {
+        $pregunta_id = Pregunta::crear($cuestionario_id, $texto_pregunta, $tipo_reactivo);
+
+        if (in_array($tipo_reactivo, ['opcion_multiple', 'escala_likert'])) {
+            foreach ($opciones as $index => $texto_opcion) {
+                $texto_opcion = trim($texto_opcion);
+                if (!empty($texto_opcion)) {
+                    $valor_punto = isset($puntos[$index]) ? (int)$puntos[$index] : 0;
+                    Pregunta::agregarOpcion($pregunta_id, $texto_opcion, $valor_punto);
+                }
+            }
+        }
+        header("Location: ../views/builder/index.php?cuestionario_id={$cuestionario_id}&exito=Reactivo agregado");
+    } else {
+        header("Location: ../views/builder/index.php?cuestionario_id={$cuestionario_id}&error=Completa el texto de la pregunta");
+    }
+    exit;
+}
+
+// 4. Eliminar pregunta
+if ($accion === 'eliminar_pregunta') {
+    $pregunta_id     = (int)($_GET['pregunta_id'] ?? 0);
+    $cuestionario_id = (int)($_GET['cuestionario_id'] ?? 0);
+
+    if ($pregunta_id > 0) {
+        Pregunta::eliminar($pregunta_id);
+        header("Location: ../views/builder/index.php?cuestionario_id={$cuestionario_id}&exito=Reactivo eliminado");
     }
     exit;
 }
