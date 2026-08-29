@@ -3,6 +3,7 @@
 session_start();
 require_once __DIR__ . '/../models/Cuestionario.php';
 require_once __DIR__ . '/../models/Pregunta.php';
+require_once __DIR__ . '/../models/Instrumento.php';
 
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../views/auth/login.php');
@@ -97,6 +98,21 @@ if ($accion === 'eliminar_pregunta') {
     if ($pregunta_id > 0) {
         Pregunta::eliminar($pregunta_id);
         header("Location: ../views/builder/index.php?cuestionario_id={$cuestionario_id}&exito=Reactivo eliminado");
+    }
+    exit;
+}
+
+// Guardar el ensamblado modular del cuestionario
+if ($accion === 'guardar_ensamble' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $cuestionario_id  = (int)($_POST['cuestionario_id'] ?? 0);
+    $instrumentos     = $_POST['instrumentos'] ?? [];
+    $preguntas_grales = $_POST['preguntas_grales'] ?? [];
+
+    if ($cuestionario_id > 0) {
+        Instrumento::guardarConfiguracion($cuestionario_id, $instrumentos, $preguntas_grales);
+        header("Location: ../views/builder/index.php?cuestionario_id={$cuestionario_id}&exito=Configuración guardada y enlazada correctamente");
+    } else {
+        header("Location: ../views/admin/cuestionarios.php?error=Error de validación");
     }
     exit;
 }

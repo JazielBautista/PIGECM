@@ -1,24 +1,36 @@
 <?php
 // views/encuestas/responder.php
 require_once '../../config/conexion.php';
-require_once '../../models/Cuestionario.php';
-require_once '../../models/Pregunta.php';
 
 $slug = trim($_GET['slug'] ?? '');
-$cuestionario = null;
+$pdo = Conexion::conectar();
 
-if (!empty($slug)) {
-    $pdo = Conexion::conectar();
-    $stmt = $pdo->prepare("SELECT * FROM cuestionarios WHERE url_slug = ? AND activo = 1");
-    $stmt->execute([$slug]);
-    $cuestionario = $stmt->fetch(PDO::FETCH_ASSOC);
-}
+// 1. Obtener la encuesta por su URL Slug
+$stmt = $pdo->prepare("SELECT * FROM cuestionarios WHERE url_slug = ? AND activo = 1");
+$stmt->execute([$slug]);
+$cuestionario = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$cuestionario) {
-    die("<div style='text-align:center; padding:50px; font-family:sans-serif;'><h2>Encuesta no disponible o finalizada.</h2><p>Verifica el enlace proporcionado.</p></div>");
+    die("<div style='text-align:center; padding:50px; font-family:sans-serif;'><h2>Encuesta no disponible o inactiva.</h2><p>Verifica el enlace proporcionado.</p></div>");
 }
 
-$preguntas = Pregunta::obtenerPorCuestionario($cuestionario['id']);
+$cuestionario_id = $cuestionario['id'];
+
+// 2. Obtener los instrumentos activos para este proyecto
+$stmtInst = $pdo->prepare("
+    SELECT ib.* 
+    FROM proyecto_instrumentos pi
+    JOIN instrumentos_base ib ON pi.instrumento_id = ib.id
+    WHERE pi.cuestionario_id = ?
+    ORDER BY ib.id ASC
+");
+$stmtInst->execute([$cuestionario_id]);
+$instrumentos_activos = $stmtInst->fetchAll(PDO::FETCH_ASSOC);
+
+// 3. Obtener las preguntas seleccionadas de Datos Generales
+$stmtGrales = $pdo->prepare("SELECT pregunta_base_id FROM proyecto_preguntas_generales WHERE cuestionario_id = ?");
+$stmtGrales->execute([$cuestionario_id]);
+$preguntas_grales_permitidas = $stmtGrales->fetchAll(PDO::FETCH_COLUMN);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -28,43 +40,74 @@ $preguntas = Pregunta::obtenerPorCuestionario($cuestionario['id']);
     <title><?= htmlspecialchars($cuestionario['titulo']) ?> | PIGECM</title>
     <link rel="stylesheet" href="../../assets/css/style.css">
 </head>
-<body style="background-color: #f4f6f9;">
-    <div class="container" style="max-width: 750px; margin-top: 30px; margin-bottom: 50px;">
-        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
-            <h2><?= htmlspecialchars($cuestionario['titulo']) ?></h2>
-            <p style="color: #666; margin: 10px 0 25px;"><?= nl2br(htmlspecialchars($cuestionario['descripcion'])) ?></p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 25px;">
+<body style="background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div class="container" style="max-width: 800px; margin: 30px auto 60px;">
+        <div style="background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            
+            <div style="border-bottom: 2px solid #0f2b48; padding-bottom: 15px; margin-bottom: 25px;">
+                <h2 style="color: #0f2b48; margin: 0 0 10px;"><?= htmlspecialchars($cuestionario['titulo']) ?></h2>
+                <p style="color: #666; margin: 0;"><?= nl2br(htmlspecialchars($cuestionario['descripcion'])) ?></p>
+            </div>
 
             <form action="../../controllers/EvaluacionController.php?accion=responder" method="POST">
                 <input type="hidden" name="cuestionario_id" value="<?= $cuestionario['id'] ?>">
 
-                <div class="form-group" style="margin-bottom: 25px;">
-                    <label for="identificador">Nombre o Folio del Participante (Opcional):</label>
-                    <input type="text" name="identificador" id="identificador" placeholder="Anónimo / Correo institucional">
-                </div>
+                <?php if (empty($instrumentos_activos)): ?>
+                    <p style="color: #c62828;">Esta encuesta no tiene instrumentos asignados actualmente.</p>
+                <?php endif; ?>
 
-                <?php foreach ($preguntas as $idx => $p): ?>
-                    <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0;">
-                        <p style="font-weight: bold; margin-bottom: 12px; font-size: 1.05rem;">
-                            <?= ($idx + 1) ?>. <?= htmlspecialchars($p['texto_pregunta']) ?>
-                        </p>
+                <?php foreach ($instrumentos_activos as $inst): ?>
+                    <div style="margin-bottom: 35px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 20px;">
+                        <h3 style="color: #0277bd; margin-top: 0; margin-bottom: 5px;"><?= htmlspecialchars($inst['nombre']) ?></h3>
+                        <p style="color: #777; font-size: 0.85rem; margin-bottom: 20px;"><?= htmlspecialchars($inst['descripcion']) ?></p>
 
-                        <?php if ($p['tipo_reactivo'] === 'texto_abierto'): ?>
-                            <textarea name="respuestas[<?= $p['id'] ?>]" rows="3" style="width: 100%;" placeholder="Escribe tu respuesta..." required></textarea>
-                        <?php else: ?>
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <?php foreach ($p['opciones'] as $op): ?>
-                                    <label style="font-weight: normal; cursor: pointer;">
-                                        <input type="radio" name="respuestas[<?= $p['id'] ?>]" value="<?= $op['id'] ?>" required>
-                                        <?= htmlspecialchars($op['texto_opcion']) ?>
-                                    </label>
-                                <?php endforeach; ?>
+                        <?php
+                        // Cargar preguntas según sea Datos Generales o un Instrumento Estándar
+                        if ($inst['permite_seleccion_preguntas']) {
+                            if (empty($preguntas_grales_permitidas)) continue;
+                            $inClause = implode(',', array_fill(0, count($preguntas_grales_permitidas), '?'));
+                            $stmtP = $pdo->prepare("SELECT * FROM preguntas_base WHERE id IN ($inClause) ORDER BY orden ASC");
+                            $stmtP->execute($preguntas_grales_permitidas);
+                        } else {
+                            $stmtP = $pdo->prepare("SELECT * FROM preguntas_base WHERE instrumento_id = ? ORDER BY orden ASC");
+                            $stmtP->execute([$inst['id']]);
+                        }
+                        $preguntas = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+                        ?>
+
+                        <?php foreach ($preguntas as $idx => $p): ?>
+                            <div style="margin-bottom: 20px; padding: 12px; background: white; border-radius: 4px; border-left: 3px solid #0277bd;">
+                                <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #333;">
+                                    <?= htmlspecialchars($p['texto_pregunta']) ?>
+                                </label>
+
+                                <?php if ($p['tipo_reactivo'] === 'texto_abierto'): ?>
+                                    <input type="text" name="respuestas[<?= $p['id'] ?>]" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Escribe aquí..." required>
+                                <?php else: ?>
+                                    <?php
+                                    $stmtOp = $pdo->prepare("SELECT * FROM opciones_base WHERE pregunta_base_id = ? ORDER BY id ASC");
+                                    $stmtOp->execute([$p['id']]);
+                                    $opciones = $stmtOp->fetchAll(PDO::FETCH_ASSOC);
+                                    ?>
+                                    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 5px;">
+                                        <?php foreach ($opciones as $op): ?>
+                                            <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+                                                <input type="radio" name="respuestas[<?= $p['id'] ?>]" value="<?= $op['id'] ?>" required>
+                                                <?= htmlspecialchars($op['texto_opcion']) ?>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
                 <?php endforeach; ?>
 
-                <button type="submit" class="btn" style="width: 100%; background-color: #0288d1; font-size: 1rem; padding: 12px;">Enviar Respuestas</button>
+                <?php if (!empty($instrumentos_activos)): ?>
+                    <button type="submit" class="btn" style="background-color: #2e7d32; width: 100%; font-size: 1.05rem; padding: 12px; margin-top: 10px;">
+                        Enviar Respuestas
+                    </button>
+                <?php endif; ?>
             </form>
         </div>
     </div>
