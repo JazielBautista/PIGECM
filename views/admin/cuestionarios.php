@@ -45,8 +45,8 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
             <div class="form-group">
                 <label for="tipo">Tipo de Cuestionario:</label>
                 <select name="tipo" id="tipo">
-                    <option value="diagnostico">Diagnóstico / Opinión General</option>
-                    <option value="evaluativo">Evaluativo (Con Ponderación y Puntaje)</option>
+                    <option value="informativo">Informativo / Diagnóstico General</option>
+                    <option value="evaluativo">Evaluativo (Con Ponderación y Puntajes Médicos)</option>
                 </select>
             </div>
 
@@ -78,8 +78,10 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
                             <td style="padding: 10px; border: 1px solid #ddd; font-size: 0.9rem;"><?= htmlspecialchars($c['autor']) ?></td>
                         <?php endif; ?>
                         <td style="padding: 10px; border: 1px solid #ddd; text-transform: capitalize; font-size: 0.9rem;"><?= htmlspecialchars($c['tipo']) ?></td>
-                        <td style="padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 0.85rem; color: #0277bd;">
-                            /responder/<?= htmlspecialchars($c['url_slug']) ?>
+                        <td style="padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 0.85rem;">
+                            <a href="../encuestas/responder.php?slug=<?= htmlspecialchars($c['url_slug']) ?>" target="_blank" style="color: #0288d1; font-weight: bold; text-decoration: underline;">
+                                /responder.php?slug=<?= htmlspecialchars($c['url_slug']) ?>
+                            </a>
                         </td>
                         <td style="padding: 10px; border: 1px solid #ddd;">
                             <span style="background-color: <?= $c['activo'] ? '#388e3c' : '#d32f2f' ?>; color: white; padding: 3px 7px; border-radius: 4px; font-size: 0.8rem;">

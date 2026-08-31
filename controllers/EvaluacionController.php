@@ -1,58 +1,56 @@
 <?php
 // controllers/EvaluacionController.php
-require_once __DIR__ . '/../models/Respuesta.php';
-require_once __DIR__ . '/../models/Pregunta.php';
+require_once __DIR__ . '/../config/conexion.php';
 
 $accion = $_GET['accion'] ?? '';
 
 if ($accion === 'responder' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $cuestionario_id = (int)($_POST['cuestionario_id'] ?? 0);
-    $identificador   = trim($_POST['identificador'] ?? 'Anónimo');
-    $respuestas      = $_POST['respuestas'] ?? []; // Array con formato [pregunta_id => valor]
-
-    if ($cuestionario_id <= 0) {
-        die('Cuestionario inválido.');
-    }
-
+    $respuestas      = $_POST['respuestas'] ?? []; // Array con [pregunta_id => opcion_id_o_texto]
+    
+    $pdo = Conexion::conectar();
     $puntaje_total = 0;
-    $detalles = [];
+    
+    // 1. Crear la cabecera de la evaluación
+    $stmt = $pdo->prepare("INSERT INTO evaluaciones (cuestionario_id, identificador_encuestado) VALUES (?, 'Anónimo')");
+    $stmt->execute([$cuestionario_id]);
+    $evaluacion_id = $pdo->lastInsertId();
 
-    // Calcular puntajes por pregunta
+    // 2. Procesar cada respuesta enviada
     foreach ($respuestas as $pregunta_id => $valor) {
         $pregunta_id = (int)$pregunta_id;
         $opcion_id = null;
-        $texto_abierto = null;
-        $puntos = 0;
+        $respuesta_texto = null;
+        $puntos_obtenidos = 0;
 
         if (is_numeric($valor)) {
-            // Es una opción seleccionada (Radio/Likert)
+            // Es una opción de selección (radio button)
             $opcion_id = (int)$valor;
-            $puntos = Respuesta::obtenerPuntosOpcion($opcion_id);
-            $puntaje_total += $puntos;
+            // Buscar cuántos puntos vale esa opción en la BD
+            $stmtPts = $pdo->prepare("SELECT puntos_valor FROM opciones_base WHERE id = ?");
+            $stmtPts->execute([$opcion_id]);
+            $res = $stmtPts->fetch(PDO::FETCH_ASSOC);
+            if ($res) {
+                $puntos_obtenidos = (int)$res['puntos_valor'];
+                $puntaje_total += $puntos_obtenidos; // Sumar al total del paciente
+            }
         } else {
-            // Es texto abierto
-            $texto_abierto = trim($valor);
+            // Es un campo de texto abierto (ej. Nombre, Edad, Lengua Materna)
+            $respuesta_texto = trim($valor);
         }
 
-        $detalles[] = [
-            'pregunta_id' => $pregunta_id,
-            'opcion_id'   => $opcion_id,
-            'texto'       => $texto_abierto,
-            'puntos'      => $puntos
-        ];
+        // 3. Guardar el detalle de la respuesta
+        $stmtDetalle = $pdo->prepare("INSERT INTO respuestas_detalle (evaluacion_id, pregunta_id, opcion_id, respuesta_texto, puntos_obtenidos) VALUES (?, ?, ?, ?, ?)");
+        $stmtDetalle->execute([$evaluacion_id, $pregunta_id, $opcion_id, $respuesta_texto, $puntos_obtenidos]);
     }
 
-    // Determinar resultado cualitativo base
-    $nivel = ($puntaje_total >= 10) ? 'Satisfactorio / Alto' : 'Regular / Inicial';
+    // 4. Actualizar el puntaje final en la cabecera
+    $nivel = ($puntaje_total > 9) ? 'Riesgo Moderado/Alto' : 'Riesgo Bajo'; // Lógica básica de ejemplo
+    $stmtUpdate = $pdo->prepare("UPDATE evaluaciones SET puntaje_total = ?, nivel_resultado = ? WHERE id = ?");
+    $stmtUpdate->execute([$puntaje_total, $nivel, $evaluacion_id]);
 
-    // Guardar en base de datos
-    $evaluacion_id = Respuesta::registrarEvaluacion($cuestionario_id, $identificador, $puntaje_total, $nivel);
-
-    foreach ($detalles as $d) {
-        Respuesta::guardarDetalle($evaluacion_id, $d['pregunta_id'], $d['opcion_id'], $d['texto'], $d['puntos']);
-    }
-
-    header("Location: ../views/encuestas/gracias.php?puntos={$puntaje_total}&eval_id={$evaluacion_id}");
+    // 5. Redirigir a la pantalla de agradecimiento
+    header("Location: ../views/encuestas/gracias.php?puntos={$puntaje_total}");
     exit;
 }
 ?>
