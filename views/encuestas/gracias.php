@@ -13,7 +13,7 @@ $puntos = (int)($_GET['puntos'] ?? 0);
     <div class="container" style="max-width: 550px; text-align: center; margin-top: 80px;">
         <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
             <h2 style="color: #2e7d32;">¡Muchas Gracias!</h2>
-            <p style="color: #666; margin: 15px 0 20px;">Tus respuestas han sido procesadas y almacenadas correctamente.</p>
+            <p style="color: #666; margin: 15px 0 20px;">Tus respuestas han sido procesadas y almacenadas correctamente.</p> 
             <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; margin-bottom: 25px;">
                 <strong>Puntaje Obtenido:</strong> <?= $puntos ?> puntos
             </div>

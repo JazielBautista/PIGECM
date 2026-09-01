@@ -76,41 +76,49 @@ $preguntas_grales_permitidas = $stmtGrales->fetchAll(PDO::FETCH_COLUMN);
                         ?>
 
                         <?php foreach ($preguntas as $idx => $p): ?>
-                            <div style="margin-bottom: 20px; padding: 12px; background: white; border-radius: 4px; border-left: 3px solid #0277bd;">
-                                <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #333;">
-                                    <?= htmlspecialchars($p['texto_pregunta']) ?>
-                                </label>
+                            <?php if ($p['tipo_reactivo'] === 'seccion'): ?>
+                                <!-- Encabezado de instrucción o agrupación -->
+                                <div style="background-color: #e3f2fd; padding: 15px; border-radius: 4px; margin-top: 25px; margin-bottom: 15px; border-left: 4px solid #0288d1;">
+                                    <h4 style="margin: 0; color: #0277bd; font-size: 1.05rem;"><?= nl2br(htmlspecialchars($p['texto_pregunta'])) ?></h4>
+                                </div>
+                            <?php else: ?>
+                                <!-- Pregunta interactiva normal -->
+                                <div style="margin-bottom: 20px; padding: 12px; background: white; border-radius: 4px; border-left: 3px solid #0277bd;">
+                                    <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #333;">
+                                        <?= htmlspecialchars($p['texto_pregunta']) ?>
+                                    </label>
 
-                                <?php if ($p['tipo_reactivo'] === 'texto_abierto'): ?>
-                                    <input type="text" name="respuestas[<?= $p['id'] ?>]" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" placeholder="Escribe aquí..." required>
-                                <?php else: ?>
-                                    <?php
-                                    $stmtOp = $pdo->prepare("SELECT * FROM opciones_base WHERE pregunta_base_id = ? ORDER BY id ASC");
-                                    $stmtOp->execute([$p['id']]);
-                                    $opciones = $stmtOp->fetchAll(PDO::FETCH_ASSOC);
-                                    ?>
-                                    
-                                    <?php if (count($opciones) > 5): ?>
-                                        <!-- Menú desplegable para listas extensas (como municipios) -->
-                                        <select name="respuestas[<?= $p['id'] ?>]" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background-color: white;" required>
-                                            <option value="">-- Selecciona una opción --</option>
-                                            <?php foreach ($opciones as $op): ?>
-                                                <option value="<?= $op['id'] ?>"><?= htmlspecialchars($op['texto_opcion']) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                    <?php if ($p['tipo_reactivo'] === 'texto_abierto'): ?>
+                                        <input type="text" name="respuestas[<?= $p['id'] ?>]" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" placeholder="Escribe aquí..." required>
                                     <?php else: ?>
-                                        <!-- Botones de radio para listas cortas -->
-                                        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 5px;">
-                                            <?php foreach ($opciones as $op): ?>
-                                                <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
-                                                    <input type="radio" name="respuestas[<?= $p['id'] ?>]" value="<?= $op['id'] ?>" required>
-                                                    <?= htmlspecialchars($op['texto_opcion']) ?>
-                                                </label>
-                                            <?php endforeach; ?>
-                                        </div>
+                                        <?php
+                                        $stmtOp = $pdo->prepare("SELECT * FROM opciones_base WHERE pregunta_base_id = ? ORDER BY id ASC");
+                                        $stmtOp->execute([$p['id']]);
+                                        $opciones = $stmtOp->fetchAll(PDO::FETCH_ASSOC);
+                                        ?>
+                                        
+                                        <?php if (count($opciones) > 5): ?>
+                                            <!-- Menú desplegable para listas extensas (como municipios) -->
+                                            <select name="respuestas[<?= $p['id'] ?>]" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background-color: white;" required>
+                                                <option value="">-- Selecciona una opción --</option>
+                                                <?php foreach ($opciones as $op): ?>
+                                                    <option value="<?= $op['id'] ?>"><?= htmlspecialchars($op['texto_opcion']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        <?php else: ?>
+                                            <!-- Botones de radio para listas cortas -->
+                                            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 5px;">
+                                                <?php foreach ($opciones as $op): ?>
+                                                    <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+                                                        <input type="radio" name="respuestas[<?= $p['id'] ?>]" value="<?= $op['id'] ?>" required>
+                                                        <?= htmlspecialchars($op['texto_opcion']) ?>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     <?php endif; ?>
-                                <?php endif; ?>
-                            </div>
+                                </div>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
                 <?php endforeach; ?>

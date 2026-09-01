@@ -89,8 +89,13 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
                             </span>
                         </td>
                         <td style="padding: 10px; border: 1px solid #ddd;">
-                            <a href="../builder/index.php?cuestionario_id=<?= $c['id'] ?>" class="btn" style="background-color: #1976d2; padding: 4px 8px; font-size: 0.8rem;">Diseñar Preguntas</a>
-                            <a href="../../controllers/CuestionarioController.php?accion=toggle_estado&id=<?= $c['id'] ?>&estado=<?= $c['activo'] ?>" class="btn" style="background-color: #f57c00; padding: 4px 8px; font-size: 0.8rem;">
+                            <!-- Botón actualizado a Ensamblar -->
+                            <a href="../builder/index.php?cuestionario_id=<?= $c['id'] ?>" class="btn" style="background-color: #1976d2; padding: 4px 8px; font-size: 0.8rem; margin-bottom: 4px; display: inline-block;">Editar</a>
+                            
+                            <!-- NUEVO BOTÓN: Ver Resultados -->
+                            <a href="resultados.php?id=<?= $c['id'] ?>" class="btn" style="background-color: #00796b; padding: 4px 8px; font-size: 0.8rem; color: white; text-decoration: none; border-radius: 4px; margin-bottom: 4px; display: inline-block;">Resultados</a>
+                            
+                            <a href="../../controllers/CuestionarioController.php?accion=toggle_estado&id=<?= $c['id'] ?>&estado=<?= $c['activo'] ?>" class="btn" style="background-color: #f57c00; padding: 4px 8px; font-size: 0.8rem; display: inline-block;">
                                 <?= $c['activo'] ? 'Pausar' : 'Activar' ?>
                             </a>
                         </td>
