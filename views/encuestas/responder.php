@@ -49,7 +49,7 @@ $preguntas_grales_permitidas = $stmtGrales->fetchAll(PDO::FETCH_COLUMN);
                 <p style="color: #666; margin: 0;"><?= nl2br(htmlspecialchars($cuestionario['descripcion'])) ?></p>
             </div>
 
-            <form action="../../controllers/EvaluacionController.php?accion=responder" method="POST">
+            <form action="../../controllers/EvaluacionController.php?accion=responder" method="POST" onsubmit="const btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.style.backgroundColor = '#757575'; btn.innerText = 'Procesando y guardando respuestas...';">
                 <input type="hidden" name="cuestionario_id" value="<?= $cuestionario['id'] ?>">
 
                 <?php if (empty($instrumentos_activos)): ?>
