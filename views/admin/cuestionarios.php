@@ -12,6 +12,18 @@ require_once '../../models/Cuestionario.php';
 require_once '../../includes/header.php';
 
 $es_admin = ($_SESSION['usuario_rol'] === 'admin');
+$pdo = Conexion::conectar();
+
+// Verificación de permisos para crear cuestionarios
+$puede_crear = false;
+if ($es_admin) {
+    $puede_crear = true;
+} else {
+    $stmtSol = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE usuario_id = ? AND estado = 'aprobada'");
+    $stmtSol->execute([$_SESSION['usuario_id']]);
+    $puede_crear = ($stmtSol->fetchColumn() > 0);
+}
+
 $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtenerPorUsuario($_SESSION['usuario_id']);
 ?>
 
@@ -28,31 +40,41 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
         <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
     <?php endif; ?>
 
-    <!-- Formulario para dar de alta nuevo Cuestionario -->
-    <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
-        <h3>Crear Nueva Encuesta / Cuestionario</h3>
-        <form action="../../controllers/CuestionarioController.php?accion=crear" method="POST" style="margin-top: 15px;">
-            <div class="form-group">
-                <label for="titulo">Título de la Encuesta:</label>
-                <input type="text" name="titulo" id="titulo" placeholder="Ej. Encuesta de Percepción de Seguridad 2026" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="descripcion">Descripción / Instrucciones:</label>
-                <textarea name="descripcion" id="descripcion" rows="2" placeholder="Breve explicación para los encuestados..."></textarea>
-            </div>
+    <!-- Formulario Condicional -->
+    <?php if ($puede_crear): ?>
+        <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
+            <h3>Crear Nueva Encuesta / Cuestionario</h3>
+            <form action="../../controllers/CuestionarioController.php?accion=crear" method="POST" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label for="titulo">Título de la Encuesta:</label>
+                    <input type="text" name="titulo" id="titulo" placeholder="Ej. Encuesta de Percepción de Seguridad 2026" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descripcion">Descripción / Instrucciones:</label>
+                    <textarea name="descripcion" id="descripcion" rows="2" placeholder="Breve explicación para los encuestados..."></textarea>
+                </div>
 
-            <div class="form-group">
-                <label for="tipo">Tipo de Cuestionario:</label>
-                <select name="tipo" id="tipo">
-                    <option value="informativo">Informativo / Diagnóstico General</option>
-                    <option value="evaluativo">Evaluativo (Con Ponderación y Puntajes Médicos)</option>
-                </select>
-            </div>
+                <div class="form-group">
+                    <label for="tipo">Tipo de Cuestionario:</label>
+                    <select name="tipo" id="tipo">
+                        <option value="informativo">Informativo / Diagnóstico General</option>
+                        <option value="evaluativo">Evaluativo (Con Ponderación y Puntajes Médicos)</option>
+                    </select>
+                </div>
 
-            <button type="submit" class="btn" style="background-color: #2e7d32;">Registrar Encuesta</button>
-        </form>
-    </div>
+                <button type="submit" class="btn" style="background-color: #2e7d32;">Registrar Encuesta</button>
+            </form>
+        </div>
+    <?php else: ?>
+        <div style="background: #fff8e1; border-left: 5px solid #ffa000; padding: 18px 22px; border-radius: 6px; margin-bottom: 30px;">
+            <h4 style="margin: 0 0 8px; color: #8d6e00;">Creación de Cuestionarios Restringida</h4>
+            <p style="margin: 0; color: #555; line-height: 1.5;">
+                Para registrar un nuevo cuestionario, primero debes contar con un espacio de investigación autorizado. 
+                Dirígete a <a href="solicitudes.php" style="color: #0277bd; font-weight: bold; text-decoration: underline;">Gestión de Solicitudes</a> para solicitarlo.
+            </p>
+        </div>
+    <?php endif; ?>
 
     <!-- Tabla de cuestionarios registrados -->
     <h3>Cuestionarios Disponibles</h3>
@@ -89,12 +111,8 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
                             </span>
                         </td>
                         <td style="padding: 10px; border: 1px solid #ddd;">
-                            <!-- Botón actualizado a Ensamblar -->
                             <a href="../builder/index.php?cuestionario_id=<?= $c['id'] ?>" class="btn" style="background-color: #1976d2; padding: 4px 8px; font-size: 0.8rem; margin-bottom: 4px; display: inline-block;">Editar</a>
-                            
-                            <!-- NUEVO BOTÓN: Ver Resultados -->
                             <a href="resultados.php?id=<?= $c['id'] ?>" class="btn" style="background-color: #00796b; padding: 4px 8px; font-size: 0.8rem; color: white; text-decoration: none; border-radius: 4px; margin-bottom: 4px; display: inline-block;">Resultados</a>
-                            
                             <a href="../../controllers/CuestionarioController.php?accion=toggle_estado&id=<?= $c['id'] ?>&estado=<?= $c['activo'] ?>" class="btn" style="background-color: #f57c00; padding: 4px 8px; font-size: 0.8rem; display: inline-block;">
                                 <?= $c['activo'] ? 'Pausar' : 'Activar' ?>
                             </a>

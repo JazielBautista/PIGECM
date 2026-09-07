@@ -152,12 +152,24 @@ function exportarCSV($pdo) {
 
     $cuestionario_id = intval($_GET['cuestionario_id'] ?? 0);
 
-    $stmtC = $pdo->prepare("SELECT titulo FROM cuestionarios WHERE id = ?");
+    //Se consulta también el usuario_id creador del cuestionario
+    $stmtC = $pdo->prepare("SELECT titulo, usuario_id FROM cuestionarios WHERE id = ?");
     $stmtC->execute([$cuestionario_id]);
     $cuestionario = $stmtC->fetch(PDO::FETCH_ASSOC);
 
     if (!$cuestionario) {
         die("Cuestionario no encontrado.");
+    }
+
+    // Blindaje contra fuga de datos (IDOR)
+    if ($_SESSION['usuario_rol'] !== 'admin' && $cuestionario['usuario_id'] != $_SESSION['usuario_id']) {
+        die("
+        <div style='max-width: 500px; margin: 80px auto; background: #fff1f0; border: 1px solid #ffa39e; border-left: 8px solid #cf1322; border-radius: 8px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-family: sans-serif; text-align: center;'>
+            <h2 style='color: #a8071a; margin-top: 0; font-size: 1.8rem;'>Exportación Bloqueada</h2>
+            <p style='color: #555; font-size: 1.1rem; line-height: 1.5;'>Por motivos de privacidad, no puedes descargar la matriz de datos (CSV) de una investigación ajena.</p>
+            <a href='../views/admin/cuestionarios.php' style='display: inline-block; margin-top: 20px; padding: 12px 24px; background-color: #0f2b48; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;'>Regresar a mi panel</a>
+        </div>
+        ");
     }
 
     $stmtEv = $pdo->prepare("SELECT * FROM evaluaciones WHERE cuestionario_id = ? ORDER BY id ASC");

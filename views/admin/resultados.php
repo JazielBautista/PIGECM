@@ -22,6 +22,17 @@ if (!$cuestionario) {
     die("<div style='text-align:center; padding:40px; font-family:sans-serif;'><h2>Cuestionario no encontrado</h2><p><a href='cuestionarios.php'>Regresar a la biblioteca</a></p></div>");
 }
 
+// Blindaje contra fuga de datos
+if ($_SESSION['usuario_rol'] !== 'admin' && $cuestionario['usuario_id'] != $_SESSION['usuario_id']) {
+    die("
+    <div style='max-width: 500px; margin: 80px auto; background: #fff1f0; border: 1px solid #ffa39e; border-left: 8px solid #cf1322; border-radius: 8px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-family: sans-serif; text-align: center;'>
+        <h2 style='color: #a8071a; margin-top: 0; font-size: 1.8rem;'>Acceso Denegado</h2>
+        <p style='color: #555; font-size: 1.1rem; line-height: 1.5;'>No tienes permisos institucionales para ver los resultados de una investigación que no te pertenece.</p>
+        <a href='cuestionarios.php' style='display: inline-block; margin-top: 20px; padding: 12px 24px; background-color: #0f2b48; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;'>Regresar a mi panel</a>
+    </div>
+    ");
+}
+
 // 3. Obtener listado de evaluaciones recibidas
 $stmtEv = $pdo->prepare("
     SELECT * FROM evaluaciones 

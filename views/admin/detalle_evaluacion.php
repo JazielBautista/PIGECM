@@ -14,7 +14,7 @@ $evaluacion_id = intval($_GET['id'] ?? 0);
 
 // 1. Obtener la evaluación principal
 $stmtEv = $pdo->prepare("
-    SELECT e.*, c.titulo AS cuestionario_titulo 
+    SELECT e.*, c.titulo AS cuestionario_titulo, c.usuario_id 
     FROM evaluaciones e
     JOIN cuestionarios c ON e.cuestionario_id = c.id
     WHERE e.id = ?
@@ -24,6 +24,17 @@ $evaluacion = $stmtEv->fetch(PDO::FETCH_ASSOC);
 
 if (!$evaluacion) {
     die("<div style='text-align:center; padding:40px; font-family:sans-serif;'><h2>Evaluación no encontrada</h2><p><a href='cuestionarios.php'>Volver</a></p></div>");
+}
+
+// Blindaje contra fuga de datos (Tarjeta Visual)
+if ($_SESSION['usuario_rol'] !== 'admin' && $evaluacion['usuario_id'] != $_SESSION['usuario_id']) {
+    die("
+    <div style='max-width: 500px; margin: 80px auto; background: #fff1f0; border: 1px solid #ffa39e; border-left: 8px solid #cf1322; border-radius: 8px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-family: sans-serif; text-align: center;'>
+        <h2 style='color: #a8071a; margin-top: 0; font-size: 1.8rem;'>Acceso Denegado</h2>
+        <p style='color: #555; font-size: 1.1rem; line-height: 1.5;'>No tienes permisos para inspeccionar este expediente clínico. Los datos pertenecen a otra investigación.</p>
+        <a href='cuestionarios.php' style='display: inline-block; margin-top: 20px; padding: 12px 24px; background-color: #0f2b48; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;'>Regresar a mi panel</a>
+    </div>
+    ");
 }
 
 // 2. Obtener el detalle de todas las respuestas contestadas

@@ -1,6 +1,7 @@
 <?php
 // controllers/CuestionarioController.php
 session_start();
+require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../models/Cuestionario.php';
 require_once __DIR__ . '/../models/Pregunta.php';
 require_once __DIR__ . '/../models/Instrumento.php';
@@ -12,7 +13,7 @@ if (!isset($_SESSION['usuario_id'])) {
 
 $accion = $_GET['accion'] ?? '';
 
-// Función auxiliar para convertir títulos en slugs legibles (ej: "Encuesta 2026" -> "encuesta-2026")
+// Función auxiliar
 function generarSlug($texto) {
     $slug = strtolower(trim($texto));
     $slug = preg_replace('/[^a-z0-9-]/', '-', $slug);
@@ -20,19 +21,30 @@ function generarSlug($texto) {
     return trim($slug, '-');
 }
 
-// 1. Crear Cuestionario
+// 1. Crear Cuestionario (Con Blindaje)
 if ($accion === 'crear' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $titulo      = trim($_POST['titulo'] ?? '');
     $descripcion = trim($_POST['descripcion'] ?? '');
-    $tipo        = $_POST['tipo'] ?? 'diagnostico';
+    $tipo        = $_POST['tipo'] ?? 'informativo';
     $usuario_id  = $_SESSION['usuario_id'];
+    $es_admin    = ($_SESSION['usuario_rol'] === 'admin');
+
+    // Blindaje backend: verificar autorización del investigador
+    if (!$es_admin) {
+        $pdo = Conexion::conectar();
+        $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE usuario_id = ? AND estado = 'aprobada'");
+        $stmtCheck->execute([$usuario_id]);
+        if ($stmtCheck->fetchColumn() == 0) {
+            header('Location: ../views/admin/cuestionarios.php?error=' . urlencode('No tienes un espacio de investigación aprobado para crear encuestas.'));
+            exit;
+        }
+    }
 
     if (empty($titulo)) {
         header('Location: ../views/admin/cuestionarios.php?error=El título es obligatorio');
         exit;
     }
 
-    // Generar slug base y verificar colisiones
     $slug_base = generarSlug($titulo);
     $slug_final = $slug_base;
     $contador = 1;
