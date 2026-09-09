@@ -3,13 +3,13 @@
 require_once __DIR__ . '/../config/conexion.php';
 
 class Cuestionario {
-    public static function crear($usuario_id, $titulo, $descripcion, $tipo, $url_slug) {
+    public static function crear($usuario_id, $titulo, $descripcion, $prefijo, $url_slug) {
         $pdo = Conexion::conectar();
         $stmt = $pdo->prepare("
-            INSERT INTO cuestionarios (usuario_id, titulo, descripcion, tipo, url_slug, activo) 
+            INSERT INTO cuestionarios (usuario_id, titulo, descripcion, prefijo, url_slug, activo) 
             VALUES (?, ?, ?, ?, ?, 1)
         ");
-        return $stmt->execute([$usuario_id, $titulo, $descripcion, $tipo, $url_slug]);
+        return $stmt->execute([$usuario_id, $titulo, $descripcion, $prefijo, $url_slug]);
     }
 
     public static function obtenerPorUsuario($usuario_id) {

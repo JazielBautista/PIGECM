@@ -21,13 +21,16 @@ function generarSlug($texto) {
     return trim($slug, '-');
 }
 
-// 1. Crear Cuestionario (Con Blindaje)
+// 1. Crear Cuestionario (Con Blindaje y Prefijo)
 if ($accion === 'crear' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $titulo      = trim($_POST['titulo'] ?? '');
     $descripcion = trim($_POST['descripcion'] ?? '');
-    $tipo        = $_POST['tipo'] ?? 'informativo';
     $usuario_id  = $_SESSION['usuario_id'];
     $es_admin    = ($_SESSION['usuario_rol'] === 'admin');
+    
+    // Recibir y sanitizar el prefijo (sin espacios ni caracteres raros)
+    $prefijo_crudo = $_POST['prefijo'] ?? '';
+    $prefijo = preg_replace('/[^a-zA-Z0-9_]/', '', $prefijo_crudo);
 
     // Blindaje backend: verificar autorización del investigador
     if (!$es_admin) {
@@ -40,8 +43,8 @@ if ($accion === 'crear' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (empty($titulo)) {
-        header('Location: ../views/admin/cuestionarios.php?error=El título es obligatorio');
+    if (empty($titulo) || empty($prefijo)) {
+        header('Location: ../views/admin/cuestionarios.php?error=El título y el prefijo son obligatorios (sin espacios)');
         exit;
     }
 
@@ -54,7 +57,7 @@ if ($accion === 'crear' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $contador++;
     }
 
-    if (Cuestionario::crear($usuario_id, $titulo, $descripcion, $tipo, $slug_final)) {
+    if (Cuestionario::crear($usuario_id, $titulo, $descripcion, $prefijo, $slug_final)) {
         header('Location: ../views/admin/cuestionarios.php?exito=Cuestionario creado con éxito');
     } else {
         header('Location: ../views/admin/cuestionarios.php?error=Error al registrar el cuestionario');
@@ -114,13 +117,20 @@ if ($accion === 'eliminar_pregunta') {
     exit;
 }
 
-// Guardar el ensamblado modular del cuestionario
+// 5. Guardar el ensamblado modular del cuestionario (Con Exclusión Mutua PHQ-9 / PHQ-A)
 if ($accion === 'guardar_ensamble' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $cuestionario_id  = (int)($_POST['cuestionario_id'] ?? 0);
     $instrumentos     = $_POST['instrumentos'] ?? [];
     $preguntas_grales = $_POST['preguntas_grales'] ?? [];
 
     if ($cuestionario_id > 0) {
+        // Validar exclusión mutua entre PHQ-9 (ID 8) y PHQ-A (ID 9)
+        $inst_ids = array_map('intval', $instrumentos);
+        if (in_array(8, $inst_ids) && in_array(9, $inst_ids)) {
+            header("Location: ../views/builder/index.php?cuestionario_id={$cuestionario_id}&error=" . urlencode('PHQ-9 y PHQ-A son mutuamente excluyentes; no puedes seleccionar ambos al mismo tiempo.'));
+            exit;
+        }
+
         Instrumento::guardarConfiguracion($cuestionario_id, $instrumentos, $preguntas_grales);
         header("Location: ../views/builder/index.php?cuestionario_id={$cuestionario_id}&exito=Configuración guardada y enlazada correctamente");
     } else {

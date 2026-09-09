@@ -35,6 +35,9 @@ $preguntas_grales_seleccionadas = Instrumento::obtenerPreguntasGeneralesProyecto
     <?php if (isset($_GET['exito'])): ?>
         <div class="alert alert-success"><?= htmlspecialchars($_GET['exito']) ?></div>
     <?php endif; ?>
+    <?php if (isset($_GET['error'])): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
+    <?php endif; ?>
 
     <form action="../../controllers/CuestionarioController.php?accion=guardar_ensamble" method="POST">
         <input type="hidden" name="cuestionario_id" value="<?= $cuestionario['id'] ?>">
@@ -46,7 +49,7 @@ $preguntas_grales_seleccionadas = Instrumento::obtenerPreguntasGeneralesProyecto
             <?php foreach ($instrumentos as $inst): ?>
                 <?php $marcado = in_array($inst['id'], $seleccionados) ? 'checked' : ''; ?>
                 
-                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #0288d1;">
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #0288d1; transition: opacity 0.2s ease;">
                     <label style="font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; cursor: pointer;">
                         <input type="checkbox" name="instrumentos[]" value="<?= $inst['id'] ?>" <?= $marcado ?> style="width: 20px; height: 20px;">
                         <?= htmlspecialchars($inst['nombre']) ?>
@@ -78,5 +81,35 @@ $preguntas_grales_seleccionadas = Instrumento::obtenerPreguntasGeneralesProyecto
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const phq9 = document.querySelector('input[name="instrumentos[]"][value="8"]');
+    const phqA = document.querySelector('input[name="instrumentos[]"][value="9"]');
+
+    if (phq9 && phqA) {
+        function actualizarExclusion() {
+            if (phq9.checked) {
+                phqA.checked = false;
+                phqA.disabled = true;
+                phqA.closest('div').style.opacity = '0.5';
+            } else if (phqA.checked) {
+                phq9.checked = false;
+                phq9.disabled = true;
+                phq9.closest('div').style.opacity = '0.5';
+            } else {
+                phq9.disabled = false;
+                phqA.disabled = false;
+                phq9.closest('div').style.opacity = '1';
+                phqA.closest('div').style.opacity = '1';
+            }
+        }
+
+        phq9.addEventListener('change', actualizarExclusion);
+        phqA.addEventListener('change', actualizarExclusion);
+        actualizarExclusion();
+    }
+});
+</script>
 
 <?php require_once '../../includes/footer.php'; ?>

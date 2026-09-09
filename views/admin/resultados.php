@@ -64,7 +64,7 @@ $promedio_puntos = $total_respuestas > 0 ? round(array_sum(array_column($evaluac
             <div>
                 <a href="cuestionarios.php" style="color: #0277bd; text-decoration: none; font-weight: bold;">&larr; Volver a Cuestionarios</a>
                 <h2 style="margin: 10px 0 5px; color: #0f2b48;"><?= htmlspecialchars($cuestionario['titulo']) ?></h2>
-                <p style="margin: 0; color: #666;">Tipo: <strong><?= strtoupper($cuestionario['tipo'] ?: 'INFORMATIVO') ?></strong> | Enlace: <code><?= htmlspecialchars($cuestionario['url_slug']) ?></code></p>
+                <p style="margin: 0; color: #666;">Prefijo: <strong><?= htmlspecialchars($cuestionario['prefijo'] ?? 'S/P') ?></strong> | Enlace: <code><?= htmlspecialchars($cuestionario['url_slug']) ?></code></p>
             </div>
             <div>
                 <a href="../../controllers/EvaluacionController.php?accion=exportar&cuestionario_id=<?= $cuestionario['id'] ?>" class="btn" style="background-color: #2e7d32; padding: 10px 18px; text-decoration: none; color: white; border-radius: 4px; font-weight: bold;">

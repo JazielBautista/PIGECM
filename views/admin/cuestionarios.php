@@ -56,11 +56,9 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
                 </div>
 
                 <div class="form-group">
-                    <label for="tipo">Tipo de Cuestionario:</label>
-                    <select name="tipo" id="tipo">
-                        <option value="informativo">Informativo / Diagnóstico General</option>
-                        <option value="evaluativo">Evaluativo (Con Ponderación y Puntajes Médicos)</option>
-                    </select>
+                    <label for="prefijo">Prefijo Institucional (Identificador):</label>
+                    <input type="text" name="prefijo" id="prefijo" placeholder="Ej. saludgeo2026 (Sin espacios)" pattern="[a-zA-Z0-9_]+" title="Solo letras, números y guiones bajos, sin espacios." required>
+                    <small style="color: #666; display:block; margin-top:5px;">Este nombre se usará para formar los folios de los encuestados (Ej. prefijo_sofia...).</small>
                 </div>
 
                 <button type="submit" class="btn" style="background-color: #2e7d32;">Registrar Encuesta</button>
@@ -83,7 +81,7 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
             <tr style="background-color: #0f2b48; color: white; text-align: left;">
                 <th style="padding: 10px; border: 1px solid #ddd;">Título</th>
                 <?php if ($es_admin): ?><th style="padding: 10px; border: 1px solid #ddd;">Autor</th><?php endif; ?>
-                <th style="padding: 10px; border: 1px solid #ddd;">Tipo</th>
+                <th style="padding: 10px; border: 1px solid #ddd;">Prefijo</th>
                 <th style="padding: 10px; border: 1px solid #ddd;">URL Pública (Slug)</th>
                 <th style="padding: 10px; border: 1px solid #ddd;">Estado</th>
                 <th style="padding: 10px; border: 1px solid #ddd;">Acciones</th>
@@ -99,7 +97,7 @@ $cuestionarios = $es_admin ? Cuestionario::obtenerTodos() : Cuestionario::obtene
                         <?php if ($es_admin): ?>
                             <td style="padding: 10px; border: 1px solid #ddd; font-size: 0.9rem;"><?= htmlspecialchars($c['autor']) ?></td>
                         <?php endif; ?>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-transform: capitalize; font-size: 0.9rem;"><?= htmlspecialchars($c['tipo']) ?></td>
+                        <td style="padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 0.9rem; color: #0277bd; font-weight: bold;"><?= htmlspecialchars($c['prefijo'] ?? '') ?></td>
                         <td style="padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 0.85rem;">
                             <a href="../encuestas/responder.php?slug=<?= htmlspecialchars($c['url_slug']) ?>" target="_blank" style="color: #0288d1; font-weight: bold; text-decoration: underline;">
                                 /responder.php?slug=<?= htmlspecialchars($c['url_slug']) ?>
